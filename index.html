@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DON'T BLINK — Mobile Horror Game</title>
+<style>
+:root{
+  --bg:#05070a;--panel:#0b0f14;--line:#27303a;--text:#f3f5f7;--muted:#89939f;
+  --red:#ff2638;--green:#35e58b;--amber:#e8bd6b;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+body{min-height:100vh;overflow-x:hidden}
+button{font:inherit}
+.app{max-width:520px;margin:auto;min-height:100vh;background:
+ radial-gradient(circle at 50% 12%,rgba(95,38,20,.24),transparent 35%),#05070a}
+.screen{display:none;min-height:100vh;padding:18px 16px 28px}
+.screen.active{display:flex;flex-direction:column}
+.logo{font-weight:1000;font-size:42px;line-height:.82;letter-spacing:-2px}
+.logo span{color:var(--red)}
+.kicker{color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase}
+.btn{width:100%;min-height:50px;border:1px solid #3a444f;background:#0d1116;color:#fff;border-radius:12px;font-weight:800;letter-spacing:.3px;cursor:pointer}
+.btn.primary{border-color:var(--red);background:linear-gradient(180deg,#2b0b10,#12080a);color:#fff}
+.btn.green{border-color:#1e9b61;background:#0b2117}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.stack{display:grid;gap:10px}
+.center{align-items:center;justify-content:center;text-align:center}
+.hero{margin:auto 0;display:grid;gap:20px}
+.tag{color:var(--red);font-weight:900;letter-spacing:3px}
+.room{
+ position:relative;height:57vh;min-height:390px;max-height:620px;border:1px solid #242b32;
+ border-radius:18px;overflow:hidden;background:
+ radial-gradient(ellipse at 50% 16%,rgba(230,181,102,.32),transparent 18%),
+ linear-gradient(90deg,rgba(0,0,0,.65),transparent 28%,transparent 72%,rgba(0,0,0,.7)),
+ linear-gradient(#251d17,#100e0d 58%,#090a0c);
+}
+.room:before{content:"";position:absolute;inset:0;background:
+ repeating-linear-gradient(90deg,transparent 0 55px,rgba(255,255,255,.018) 56px 57px),
+ linear-gradient(0deg,rgba(0,0,0,.7),transparent 55%);pointer-events:none}
+.lamp{position:absolute;top:5%;left:50%;transform:translateX(-50%);width:100px;height:20px;border-radius:0 0 60px 60px;background:#e6cf9e;box-shadow:0 0 80px 30px rgba(235,195,118,.25)}
+.lamp:before{content:"";position:absolute;top:-55px;left:48px;width:3px;height:55px;background:#111}
+.door{position:absolute;right:8%;top:26%;width:17%;height:42%;background:linear-gradient(90deg,#15100e,#30221b);border:5px solid #0b0908;box-shadow:inset 0 0 15px #000}
+.picture{position:absolute;left:8%;top:27%;width:18%;height:20%;border:7px solid #211914;background:linear-gradient(135deg,#37322c,#15191d)}
+.picture:after{content:"";position:absolute;width:35%;height:45%;left:32%;top:27%;background:#171717;border-radius:50%}
+.table{position:absolute;left:18%;right:18%;bottom:12%;height:16%;background:linear-gradient(#1d1714,#0b0b0c);border-radius:4px 4px 16px 16px;box-shadow:0 15px 30px #000}
+.chair{position:absolute;left:50%;bottom:20%;transform:translateX(-50%);width:34%;height:29%;background:linear-gradient(90deg,#0c0b0c,#262021,#0b0b0c);border-radius:42% 42% 12% 12%;box-shadow:0 15px 30px #000}
+.person{position:absolute;left:50%;top:28%;transform:translateX(-50%);width:21%;height:25%;background:linear-gradient(90deg,#111,#3a3635,#0d0d0e);border-radius:50% 50% 30% 30%;box-shadow:0 8px 35px #000}
+.person:before{content:"";position:absolute;left:50%;top:-30%;transform:translateX(-50%);width:58%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 38% 40%,#f1eee8 0 4%,#141414 5% 12%,#8c8882 13% 45%,#292929 70%);box-shadow:0 0 16px #000}
+.person:after{content:"";position:absolute;left:50%;top:-12%;transform:translateX(-50%);width:14%;height:5%;background:#050505;box-shadow:30px 0 #050505}
+.hud{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;z-index:3;font-weight:900}
+.timer{padding:7px 10px;border:1px solid #424952;background:rgba(3,5,7,.72);border-radius:9px}
+.hint{position:absolute;bottom:7%;left:50%;transform:translateX(-50%);font-weight:900;letter-spacing:1px;background:rgba(0,0,0,.62);padding:9px 15px;border-radius:10px;white-space:nowrap}
+.choices{display:grid;gap:8px;margin-top:12px}
+.choice{text-align:left;padding:13px 14px;border:1px solid #343c45;background:#0b0e12;border-radius:11px;color:#fff;font-weight:800}
+.choice.correct{border-color:var(--green);color:var(--green)}
+.choice.wrong{border-color:var(--red);color:#ff6d78}
+.card{border:1px solid var(--line);background:linear-gradient(180deg,#0b0f14,#080b0f);border-radius:16px;padding:16px}
+.video-wrap{position:relative;border:1px solid #26303a;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:4/3}
+video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.facebox{position:absolute;left:50%;top:50%;width:42%;height:42%;transform:translate(-50%,-50%);border:2px dashed #3b4752;border-radius:18px;pointer-events:none}
+.status{display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:#65707b}.dot.ok{background:var(--green);box-shadow:0 0 12px var(--green)}.dot.bad{background:var(--red)}
+.meter{height:7px;background:#20262d;border-radius:20px;overflow:hidden}.meter i{display:block;height:100%;width:0;background:var(--green);transition:width .1s}
+.big{font-size:32px;font-weight:1000}
+.small{font-size:13px;color:var(--muted);line-height:1.5}
+.result-icon{font-size:70px}
+.xp{font-size:42px;font-weight:1000;color:var(--green)}
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.level{min-height:90px;border:1px solid #343c45;background:#0b0f14;border-radius:13px;color:#fff;font-weight:900}.level.locked{opacity:.4}
+.topspace{height:8vh}
+@media(max-width:360px){.logo{font-size:36px}.room{min-height:350px}.person{width:24%}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="home" class="screen active center">
+  <div class="hero">
+    <div><div class="kicker">30 SECONDS • ONE CHANGE</div><div class="logo">DON'T<br>BL<span>Ι</span>NK</div><p class="small">Gözünü qırpma. Otağı izlə. Nəyinsə dəyişdiyini tap.</p></div>
+    <div class="stack">
+      <button class="btn primary" id="playBtn">PLAY</button>
+      <button class="btn" id="calBtn">GÖZ DETEKTORUNU YOXLAMA</button>
+      <button class="btn" id="levelsBtn">LEVEL-LƏR</button>
+    </div>
+  </div>
+</section>
+
+<section id="calibration" class="screen">
+  <div class="topspace"></div>
+  <div class="kicker">EYE DETECTION</div><h1 class="big">Kameranı hazırla.</h1>
+  <p class="small">Üzünü işıqlı saxla, telefonu göz səviyyəsində tut və kameraya düz bax. Sistem əvvəlcə sənin açıq göz ölçünü kalibrasiya edəcək.</p>
+  <div class="video-wrap"><video id="video" autoplay muted playsinline></video><div class="facebox"></div></div>
+  <div class="status"><i class="dot" id="faceDot"></i><span id="faceText">Kamera gözlənilir...</span></div>
+  <div class="meter"><i id="calMeter"></i></div>
+  <p id="calText" class="small">Kamera icazəsi lazımdır. Saytda HTTPS və ya localhost istifadə et; Play Store versiyasında kamera icazəsi ayrıca tələb olunacaq.</p>
+  <div class="stack">
+    <button class="btn primary" id="cameraBtn">KAMERANI AÇ</button>
+    <button class="btn" id="homeFromCal">GERİ</button>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <div class="hudStatic" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <b>LEVEL <span id="levelNo">1</span></b><b class="timer">👁 <span id="gameTime">30</span>s</b>
+  </div>
+  <div class="room" id="gameRoom">
+    <div class="hud"><span id="detectLabel">● EYE READY</span><span id="blinkCount">0 BLINK</span></div>
+    <div class="lamp"></div><div class="door" id="doorObj"></div><div class="picture" id="pictureObj"></div>
+    <div class="table"></div><div class="chair" id="chairObj"></div><div class="person" id="personObj"></div>
+    <div class="hint">DON'T BLINK…</div>
+  </div>
+  <div class="card" style="margin-top:10px"><b>Nə dəyişdi?</b><div class="choices">
+    <button class="choice" data-answer="picture">A) Şəkil</button>
+    <button class="choice" data-answer="door">B) Qapı</button>
+    <button class="choice" data-answer="chair">C) Kreslo</button>
+    <button class="choice" data-answer="light">D) İşıq</button>
+  </div><p id="gameMsg" class="small" aria-live="polite">30 saniyə. Gözünü ekrandan ayırma.</p></div>
+</section>
+
+<section id="result" class="screen center">
+  <div class="hero">
+    <div class="result-icon" id="resultIcon">✓</div><div class="big" id="resultTitle">DÜZGÜN!</div>
+    <div class="xp" id="resultXp">+100 XP</div><p class="small" id="resultMsg"></p>
+    <button class="btn primary" id="againBtn">TƏKRAR OYNA</button>
+    <button class="btn" id="homeBtn">ƏSAS MENYU</button>
+  </div>
+</section>
+
+<section id="levels" class="screen">
+  <div class="topspace"></div><div class="kicker">PROGRESS</div><h1 class="big">LEVEL-LƏR</h1>
+  <p class="small">İlk 6 level açıqdır. Hər leveldə dəyişiklik daha kiçik və daha sürətli olur.</p>
+  <div class="levels" id="levelGrid"></div>
+  <button class="btn" id="levelsHome" style="margin-top:14px">GERİ</button>
+</section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const screens = ["home","calibration","game","result","levels"];
+  const show = id => { screens.forEach(x => document.getElementById(x).classList.toggle("active",x===id)); window.scrollTo(0,0); };
+  let stream=null, faceMesh=null, detecting=false, raf=0;
+  let samples=[], baseline=null, eyeClosed=false, closedAt=0, lastBlink=0, blinkCount=0;
+  let gameTimer=null, gameEnd=0, currentLevel=1, answerKey="door", changed=false;
+
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+  function ear(lm, ids){
+    const v1=dist(lm[ids[1]],lm[ids[5]]), v2=dist(lm[ids[2]],lm[ids[4]]), h=dist(lm[ids[0]],lm[ids[3]]);
+    return h ? (v1+v2)/(2*h) : 0;
+  }
+  function median(a){const b=[...a].sort((x,y)=>x-y);return b.length?b[Math.floor(b.length/2)]:0}
+
+  async function initCamera(){
+    try{
+      if(!navigator.mediaDevices?.getUserMedia) throw new Error("Bu brauzerdə kamera API-si yoxdur.");
+      if(stream) stream.getTracks().forEach(t=>t.stop());
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:640},height:{ideal:480}},audio:false});
+      $("#video").srcObject=stream;
+      await $("#video").play();
+      $("#calText").textContent="Kamera açıldı. Üzünü çərçivənin ortasında saxla.";
+      if(!faceMesh){
+        faceMesh=new FaceMesh({locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+        faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.6,minTrackingConfidence:.6});
+        faceMesh.onResults(onResults);
+      }
+      samples=[];baseline=null;detecting=true;detectLoop();
+    }catch(e){
+      $("#calText").textContent="Kamera açıla bilmədi: "+(e.message||"icazə verilmədi");
+      $("#faceDot").className="dot bad";
+    }
+  }
+
+  async function detectLoop(){
+    if(!detecting)return;
+    if($("#video").readyState>=2 && faceMesh) await faceMesh.send({image:$("#video")});
+    raf=requestAnimationFrame(detectLoop);
+  }
+
+  function onResults(res){
+    const lm=res.multiFaceLandmarks?.[0];
+    if(!lm){$("#faceDot").className="dot bad";$("#faceText").textContent="Üz görünmür — telefonu bir az uzaqlaşdır.";return}
+    $("#faceDot").className="dot ok";$("#faceText").textContent="Üz tapıldı • gözlər izlənir";
+    const left=ear(lm,[33,160,158,133,153,144]), right=ear(lm,[362,385,387,263,373,380]), e=(left+right)/2;
+    if(baseline===null){
+      samples.push(e);
+      const pct=Math.min(100,samples.length/45*100);$("#calMeter").style.width=pct+"%";
+      if(samples.length>=45){baseline=median(samples);$("#calText").textContent="Kalibrasiya hazırdır. Gözünü normal açıq saxla.";setTimeout(()=>startGame(),500)}
+      return;
+    }
+    const closeT=Math.max(.105,baseline*.62), openT=Math.max(.15,baseline*.78);
+    if(!eyeClosed && e<closeT){
+      eyeClosed=true;closedAt=performance.now();
+    } else if(eyeClosed && e>openT){
+      const dur=performance.now()-closedAt; eyeClosed=false;
+      if(dur>=55 && dur<=650 && performance.now()-lastBlink>220){
+        lastBlink=performance.now();blinkCount++;
+        $("#blinkCount").textContent=blinkCount+" BLINK";
+        $("#detectLabel").textContent="● BLINK DETECTED";
+        $("#detectLabel").style.color="var(--red)";
+        if(document.getElementById("game").classList.contains("active")) handleBlink();
+        setTimeout(()=>$("#detectLabel").textContent="● EYE READY",350);
+      }
+    }
+  }
+
+  function handleBlink(){
+    // A detected blink ends the round. The detector remains active for later rounds.
+    $("#gameMsg").textContent="GÖZ QIRPDIN! 😈";
+    finish(false, "blink");
+  }
+
+  function startCalibration(){show("calibration");$("#cameraBtn").focus()}
+  async function startGame(){
+    show("game");blinkCount=0;$("#blinkCount").textContent="0 BLINK";$("#gameMsg").textContent="30 saniyə. Gözünü ekrandan ayırma.";
+    changed=false;
+    const changes=["door","picture","chair","light"];answerKey=changes[(currentLevel*7)%changes.length];
+    const room=$("#gameRoom");["doorObj","pictureObj","chairObj"].forEach(id=>document.getElementById(id).style.transform="");
+    // Baseline scene is rendered first; the change is applied later.
+    gameEnd=Date.now()+30000;clearInterval(gameTimer);
+    gameTimer=setInterval(()=>{
+      const sec=Math.max(0,Math.ceil((gameEnd-Date.now())/1000));$("#gameTime").textContent=sec;
+      if(sec<=0){clearInterval(gameTimer);applyChange();$("#gameMsg").textContent="Vaxt bitdi. İndi seç.";}
+    },100);
+    setTimeout(applyChange,10000+currentLevel*700);
+  }
+  function applyChange(){
+    if(changed)return;
+    changed=true;
+    if(answerKey==="door")$("#doorObj").style.right="18%";
+    if(answerKey==="picture"){$("#pictureObj").style.transform="rotate(7deg) scale(1.08)";}
+    if(answerKey==="chair"){$("#chairObj").style.width="40%";$("#chairObj").style.filter="brightness(.65)";}
+    if(answerKey==="light"){$("#gameRoom").style.background="linear-gradient(#111820,#080a0d 58%,#06070a)";}
+    $("#gameMsg").textContent="Bir şey dəyişdi… indi tap!";
+  }
+  function finish(correct, reason="answer"){
+    clearInterval(gameTimer);show("result");
+    $("#resultIcon").textContent=correct?"✓":"×";$("#resultTitle").textContent=correct?"DÜZGÜN!":"YANLIŞ!";
+    $("#resultTitle").style.color=correct?"var(--green)":"var(--red)";
+    $("#resultXp").textContent=correct?"+100 XP":"+0 XP";
+    $("#resultMsg").textContent=reason==="blink"
+      ?"Göz qırpıldı. Otaqdakı dəyişiklik: "+answerKey+". Yenidən cəhd et."
+      :(correct?"Gözlərin yaxşı işlədi. Növbəti level daha qəddardır.":"O, sənə baxır… dəyişiklik "+answerKey+" idi.");
+  }
+  document.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>finish(b.dataset.answer===answerKey)));
+  $("#playBtn").onclick=()=>{if(baseline)startGame();else startCalibration()};
+  $("#calBtn").onclick=startCalibration;
+  $("#cameraBtn").onclick=initCamera;
+  $("#homeFromCal").onclick=()=>show("home");
+  $("#againBtn").onclick=()=>startGame();
+  $("#homeBtn").onclick=()=>show("home");
+  $("#levelsBtn").onclick=()=>show("levels");
+  $("#levelsHome").onclick=()=>show("home");
+  for(let i=1;i<=12;i++){const b=document.createElement("button");b.className="level"+(i>6?" locked":"");b.textContent=i>6?"🔒 "+i:i;b.disabled=i>6;b.onclick=()=>{currentLevel=i;startCalibration()};$("#levelGrid").appendChild(b)}
+  window.addEventListener("beforeunload",()=>{detecting=false;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop())});
+})();
+</script>
+</body>
+</html>
